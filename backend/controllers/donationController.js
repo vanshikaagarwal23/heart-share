@@ -8,14 +8,6 @@ const PORT = process.env.PORT || 5000;
 
 app.use(bodyParser.json());
 
-// Donation Schema
-const donationSchema = new mongoose.Schema({
-  donorName: { type: String, required: true },
-  amount: { type: Number, required: true },
-  message: { type: String },
-  date: { type: Date, default: Date.now }
-});
-
 // Create a donation
 app.post('/api/donationj', async (req, res) => {
   try {
