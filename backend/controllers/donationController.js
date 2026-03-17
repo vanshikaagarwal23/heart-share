@@ -40,6 +40,21 @@ app.get('/api/donationj/:id', async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
-/ Start server
-app.listen(PORT, () => console.log(`DonationJ API running on port ${PORT}`));
+// Update donation status
+app.put("/donations/:id/status", (req, res) => {
+  const donation = donations.find(d => d.id === parseInt(req.params.id));
+  if (!donation) return res.status(404).send("Donation not found");
+
+  donation.status = req.body.status;
+  res.json(donation);
+});
+
+// Delete donation
+app.delete("/donations/:id", (req, res) => {
+  donations = donations.filter(d => d.id !== parseInt(req.params.id));
+  res.send("Donation deleted");
+});
+
+// Start server
+app.listen(PORT, () => console.log(`DonationJ API running on port ${PORT}));
 
