@@ -29,5 +29,32 @@ app.post("/donations", async (req, res) => {
       "SELECT donor_id FROM donors WHERE email = ?",
       [donor.email]
     );
+    let donorId;
+    if (existing.length > 0) {
+      donorId = existing[0].donor_id;
+    } else {
+      const [result] = await conn.execute(
+        "INSERT INTO donors (name, email, phone) VALUES (?, ?, ?)",
+        [donor.name, donor.email, donor.phone]
+      );
+      donorId = result.insertId;
+    }
+
+    // Insert donation
+    const [donation] = await conn.execute(
+      "INSERT INTO donations (donor_id, amount, currency, payment_method, status, message) VALUES (?, ?, ?, ?, 'pending', ?)",
+      [donorId, amount, currency, payment_method, message]
+    );
+
+    res.json({
+      donation_id: donation.insertId,
+      status: "pending",
+      payment_url: `https://payments.ngoexample.org/pay/${donation.insertId}`
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
     
