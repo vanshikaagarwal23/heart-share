@@ -25,6 +25,8 @@ exports.registerUser = async (req, res) => {
       role
     });
 
+    user.password = undefined;
+
     res.status(201).json({
       message: "User registered successfully",
       user
@@ -63,10 +65,62 @@ exports.loginUser = async (req, res) => {
       { expiresIn: "1d" }
     );
 
+    user.password = undefined;
+
     res.json({
       message: "Login successful",
       token,
       user
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+
+};
+
+
+
+// GET PROFILE
+exports.getUserProfile = async (req, res) => {
+
+  try {
+
+    const user = await User.findById(req.user.id).select("-password");
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.json(user);
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+
+};
+
+
+
+// UPDATE PROFILE
+exports.updateUserProfile = async (req, res) => {
+
+  try {
+
+    const user = await User.findById(req.user.id);
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    user.name = req.body.name || user.name;
+    user.email = req.body.email || user.email;
+
+    const updatedUser = await user.save();
+
+    res.json({
+      message: "Profile updated successfully",
+      user: updatedUser
     });
 
   } catch (error) {
