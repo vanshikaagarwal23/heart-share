@@ -19,7 +19,7 @@ async function getConnection() {
   return await mysql.createConnection(dbConfig);
 }
 // 1. Create Donation
-app.post("/donations", async (req, res) => {
+ app.post("/donations", async (req, res) => {
   const { donor, amount, currency, payment_method, message } = req.body;
   try {
     const conn = await getConnection();
