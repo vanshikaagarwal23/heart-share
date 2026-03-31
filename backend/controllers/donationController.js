@@ -17,6 +17,7 @@ mongoose.connect('mongodb://localhost:27017/donationj', {
 .then(() => console.log('MongoDB connected'))
 .catch(err => console.error(err));
 
+// Routes
 // Create a donation
 app.post('/api/donationj', async (req, res) => {
   try {

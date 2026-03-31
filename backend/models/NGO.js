@@ -59,7 +59,6 @@ async function getConnection() {
 // rule 1: distance check 
 const validNgos = ngo list
  .map(ngo =>)
-
 // Rule 2: Food expiry check
   if (donation_type === "food") {
     const invalidItem = items.find(item => item.expiry_hours > 24);
