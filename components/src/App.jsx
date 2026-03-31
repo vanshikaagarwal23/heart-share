@@ -1,11 +1,7 @@
-import React from 'react'
+import Dashboard from "./pages/Dashboard";
 
-const App =()=> {
-
-  const user ='Harsh'
-  return(
-    <h1>Hello Guys I am {user}</h1>// Curly brackets for displaying values of variable.
-  )
+function App(){
+  return <Dashboard />;
 }
 
-export default App
+export default App;
