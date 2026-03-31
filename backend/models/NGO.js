@@ -81,8 +81,6 @@ const validNgos = ngo list
     distance_km: chosenNgo.distance
   });
 
-
-
 // 2. Confirm Donation
 app.post("/donations/:id/confirm", async (req, res) => {
   const donationId = req.params.id;
@@ -93,13 +91,7 @@ app.post("/donations/:id/confirm", async (req, res) => {
       [donationId]
     );
 
-    // Insert receipt
-    const receiptUrl = `https://ngoexample.org/receipts/${donationId}`;
-    await conn.execute(
-      "INSERT INTO receipts (donation_id, receipt_url) VALUES (?, ?)",
-      [donationId, receiptUrl]
-    );
-
+  
     res.json({
       donation_id: donationId,
       status: "confirmed",
