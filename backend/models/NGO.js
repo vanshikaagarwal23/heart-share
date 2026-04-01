@@ -59,6 +59,26 @@ async function getConnection() {
 // rule 1: distance check 
 const validNgos = ngo list
  .map(ngo =>)
+ if (ngo.distance > 10) {
+    return res.status(400).json({
+      const distance = haversine(
+        donor_location.latitude,
+        donor_location.longitude,
+        ngo.latitude,
+        ngo.longitude
+      );
+      return { ...ngo, distance };
+    })
+    .filter(ngo => ngo.distance >= 5 && ngo.distance <= 10);
+
+  if (validNgos.length === 0) {
+    return res.status(400).json({
+      status: "error",
+      message: "No NGO within 5–10 km"
+    });
+  }
+
+
 // Rule 2: Food expiry check
   if (donation_type === "food") {
     const invalidItem = items.find(item => item.expiry_hours > 24);
