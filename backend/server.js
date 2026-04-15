@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const express = require("express");
 const mongoose = require("mongoose");
 
@@ -9,7 +11,7 @@ app.use(express.json());
 
 
 // MongoDB Connection
-mongoose.connect("mongodb://127.0.0.1:27017/heartshare")
+mongoose.connect(process.env.MONGO_URI)
 .then(() => {
 
   console.log("MongoDB Connected");
