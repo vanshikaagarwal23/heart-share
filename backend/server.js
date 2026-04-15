@@ -29,7 +29,7 @@ mongoose.connect(process.env.MONGO_URI)
 
 // Test route
 app.get("/", (req, res) => {
-  res.send("HeartShare API Running");
+  res.send(" donation in progress");
 });
 
 

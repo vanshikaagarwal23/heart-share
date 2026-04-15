@@ -10,8 +10,8 @@ const PORT = process.env.PORT || 5000;
 const donationSchema = new mongoose.Schema({
   donorName: { type: String, required: true },
   amount: { type: Number, required: true },
-  message: { type: String },
-  date: { type: Date, default: Date.now }
-});
-const Donation = mongoose.model('Donation', donationSchema);
+  itemType: { type: String, enum: ["food", "clothes", "study material"], required: true },
+  status: { type: String, default: "pending" },
+  preparedAt: { type: Date }, // only relevant for food
+}, { timestamps: true });
 
