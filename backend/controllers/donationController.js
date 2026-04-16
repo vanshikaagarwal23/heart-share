@@ -1,22 +1,13 @@
 // donationj-api/index.js
-const express = require("express");
-const router = express.Router();
-
-const { createDonation, getAllDonations, getDonationById, deleteDonation } = require("../controllers/donationController");
-
-// Create a donation
-router.post("/donationj", createDonation);    
+    
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
+const router = express.Router();
+
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-
-
-
-
-
 // DONATION
   // CREATE DONATION
 exports.createDonation = async (req, res) => {
@@ -71,8 +62,8 @@ exports.createDonation = async (req, res) => {
 // DISPLAY ALL DONATIONS (LIST)
 exports.getDonations = async (req, res) => {
   try {
-    // Fetch all donations, newest first
-    const donations = await Donation.find().sort({ createdAt: -1 });
+    // Fetch all donations, basis of maximum amount first
+    const donations = await Donation.find().sort({ amount: -1 });
 
     if (!donations || donations.length === 0) {
       return res.status(404).json({ message: "No donations found" });

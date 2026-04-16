@@ -1,7 +1,7 @@
 // app.js ngo 
 const express = require("express");
 const bodyParser = require("body-parser");
-const mysql = require("mysql2/promise");
+const mongoose = require('mongoose');
 
 const app = express();
 app.use(bodyParser.json());
@@ -15,45 +15,53 @@ const dbConfig = {
 };
 
 // Utility: connect to DB
-async function getConnection() {
-  return await mysql.createConnection(dbConfig);
-}
+  mongoose.connect("mongodb+srv://100950_db_user:e3N5bUP1VBafTGDt@cluster0.db8s3wk.mongodb.net/", {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
+.then(() => console.log("MongoDB connected"))
+.catch(err => console.error("MongoDB connection error:", err));
+
 // 1. Create Donation
  app.post("/donations", async (req, res) => {
   const { donor, amount, currency, payment_method, message } = req.body;
   try {
-    const conn = await getConnection();
 
     // Insert donor if not exists
-    const [existing] = await conn.execute(
-      "SELECT donor_id FROM donors WHERE email = ?",
-      [donor.email]
-    );
-    let donorId;
-    if (existing.length > 0) {
-      donorId = existing[0].donor_id;
-    } else {
-      const [result] = await conn.execute(
-        "INSERT INTO donors (name, email, phone) VALUES (?, ?, ?)",
-        [donor.name, donor.email, donor.phone]
-      );
-      donorId = result.insertId;
-    }
+    let donorDoc = await Donor.findOne({ email: donor.email });
+
+if (!donorDoc) {
+  donorDoc = new Donor({
+    name: donor.name,
+    email: donor.email,
+    phone: donor.phone
+  });
+  await donorDoc.save();
+}
+
+// donorId is now the MongoDB ObjectId
+const donorId = donorDoc._id;
 
     // Insert donation
-    const [donation] = await conn.execute(
-      "INSERT INTO donations (donor_id, amount, currency, payment_method, status, message) VALUES (?, ?, ?, ?, 'pending', ?)",
-      [donorId, amount, currency, payment_method, message]
-    );
+const donation = new Donation({
+    donor_id: donorId,   // this is donorDoc._id from the donor check
+    amount,
+    currency,
+    payment_method,
+    status: "pending",
+    message
+  });
 
-    res.json({
-      donation_id: donation.insertId,
-      status: "pending",
-      payment_url: `https://payments.ngoexample.org/pay/${donation.insertId}`
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  await donation.save();
+
+  res.json({
+    donation_id: donation._id,   // MongoDB ObjectId
+    status: donation.status,
+    payment_url: `https://payments.ngoexample.org/pay/${donation._id}`
+  });
+} catch (err) {
+  res.status(500).json({ error: err.message });
+}  
 });
 // accept donation or reject it
 // Haversine formula to calculate distance in km
@@ -70,61 +78,66 @@ function haversine(lat1, lon1, lat2, lon2) {
   return R * c;
 }
 
-// rule 1: distance check 
-const validNgos = ngo list
- .map(ngo =>)
- if (ngo.distance > 10) {
-    return res.status(400).json({
-      const distance = haversine(
-        donor_location.latitude,
-        donor_location.longitude,
-        ngo.latitude,
-        ngo.longitude
-      );
-      return { ...ngo, distance };
-    })
-    .filter(ngo => ngo.distance >= 5 && ngo.distance <= 10);
+// Route: Accept or reject donation
+app.post("/donations/validate", async (req, res) => {
+  const { donor_location, donation_type, items } = req.body;
 
-  if (validNgos.length === 0) {
-    return res.status(400).json({
-      status: "error",
-      message: "No NGO within 5–10 km"
-    });
-  }
+  try {
+    // Rule 1: Distance check (5–10 km)
+    const validNgos = ngos
+      .map(ngo => {
+        const distance = haversine(
+          donor_location.latitude,
+          donor_location.longitude,
+          ngo.latitude,
+          ngo.longitude
+        );
+        return { ...ngo, distance };
+      })
+      .filter(ngo => ngo.distance >= 5 && ngo.distance <= 10);
 
-
-// Rule 2: Food expiry check
-  if (donation_type === "food") {
-    const invalidItem = items.find(item => item.expiry_hours > 24);
-    if (invalidItem) {
+    if (validNgos.length === 0) {
       return res.status(400).json({
         status: "error",
-        message: `Food item '${invalidItem.name}' expiry exceeds 24 hrs`
+        message: "No NGO within 5–10 km"
       });
     }
-  }
 
-  // Rule 3: First NGO acceptance (take the first valid NGO)
-  const chosenNgo = validNgos[0];
+    // Rule 2: Food expiry check
+    if (donation_type === "food") {
+      const invalidItem = items.find(item => item.expiry_hours > 24);
+      if (invalidItem) {
+        return res.status(400).json({
+          status: "error",
+          message: `Food item '${invalidItem.name}' expiry exceeds 24 hrs`
+        });
+      }
+    }
 
-  return res.json({
-    status: "success",
-    message: "Donation accepted",
-    ngo_id: chosenNgo.id,
-    distance_km: chosenNgo.distance
-  });
+    // Rule 3: First NGO acceptance
+    const chosenNgo = validNgos[0];
+
+    return res.json({
+      status: "success",
+      message: "Donation accepted",
+      ngo_id: chosenNgo.id,
+      distance_km: chosenNgo.distance
+    });
+  
 
 // 2. Confirm Donation
 app.post("/donations/:id/confirm", async (req, res) => {
   const donationId = req.params.id;
   try {
-    const conn = await getConnection();
-    await conn.execute(
-      "UPDATE donations SET status = 'confirmed', confirmed_at = NOW() WHERE donation_id = ?",
-      [donationId]
-    );
-
-  
+    await Donation.updateOne(
+    { donation_id: donationId }, // filter
+    { 
+      $set: { 
+        status: "confirmed", 
+        confirmed_at: new Date() 
+      } 
+    }
+  );
     res.json({
       donation_id: donationId,
       status: "confirmed",
@@ -138,43 +151,60 @@ app.post("/donations/:id/confirm", async (req, res) => {
 // 3. Get Donation Details
 app.get("/donations/:id", async (req, res) => {
   const donationId = req.params.id;
-  try {
-    const conn = await getConnection();
-    const [rows] = await conn.execute(
-      `SELECT d.donation_id, d.amount, d.currency, d.status, d.created_at, d.confirmed_at,
-              donors.name AS donor_name, donors.email AS donor_email
-       FROM donations d
-       JOIN donors ON d.donor_id = donors.donor_id
-       WHERE d.donation_id = ?`,
-      [donationId]
-    );
 
-    if (rows.length === 0) {
+  try {
+    const donation = await Donation.findOne({ donation_id: donationId })
+                                   .populate("donor_id", "name email"); 
+    // populate donor_id, only return name and email
+
+    if (!donation) {
       return res.status(404).json({ error: "Donation not found" });
     }
 
-    res.json(rows[0]);
+    res.json({
+      donation_id: donation.donation_id,
+      amount: donation.amount,
+      currency: donation.currency,
+      status: donation.status,
+      created_at: donation.created_at,
+      confirmed_at: donation.confirmed_at,
+      donor_name: donation.donor_id?.name,
+      donor_email: donation.donor_id?.email
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
 // 4. List Donations
+// Route: Get donations with optional status filter and limit
 app.get("/donations", async (req, res) => {
   const { status, limit = 10 } = req.query;
-  try {
-    const conn = await getConnection();
-    const [rows] = await conn.execute(
-      `SELECT donation_id, amount, currency, status, donors.name AS donor_name
-       FROM donations
-       JOIN donors ON donations.donor_id = donors.donor_id
-       WHERE (? IS NULL OR status = ?)
-       ORDER BY donations.created_at DESC
-       LIMIT ?`,
-      [status || null, status || null, parseInt(limit)]
-    );
 
-    res.json(rows);
+  try {
+    // Build filter object
+    const filter = {};
+    if (status) {
+      filter.status = status;
+    }
+
+    // Query donations, populate donor info, sort by created_at
+    const donations = await Donation.find(filter)
+      .populate("donor_id", "name email") // only bring back donor name + email
+      .sort({ created_at: -1 })
+      .limit(parseInt(limit));
+
+    // Format response similar to SQL version
+    const result = donations.map(d => ({
+      donation_id: d.donation_id,
+      amount: d.amount,
+      currency: d.currency,
+      status: d.status,
+      donor_name: d.donor_id?.name,
+      donor_email: d.donor_id?.email
+    }));
+
+    res.json(result);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -184,6 +214,8 @@ app.get("/donations", async (req, res) => {
 app.listen(3000, () => {
   console.log("NGO Donation API running on http://localhost:3000");
 });
+
+
 
 
     
