@@ -1,45 +1,77 @@
-const dotenv = require("dotenv");
-dotenv.config();
+require("dotenv").config();
 const express = require("express");
 const mongoose = require("mongoose");
+const cors = require("cors");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
+const morgan = require("morgan");
+const authRoutes = require("./routes/authRoutes");
+const donationRoutes = require("./routes/donationRoutes");
 
-const routes = require("./routes/donationRoutes");
 
 const app = express();
+app.use(morgan("dev"));
 
+
+// 🔐 Security Middleware
+app.use(helmet());
+app.use(cors());
+
+
+// ⛔ Rate Limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100,
+  message: {
+    success: false,
+    message: "Too many requests, please try again later",
+  },
+});
+app.use(limiter);
+
+
+// 📦 Body Parser
 app.use(express.json());
 
 
-// MongoDB Connection
-mongoose.connect(process.env.MONGO_URL)
-.then(() => {
-
-  console.log("MongoDB Connected");
-
-  // Start server ONLY after DB connects
-  app.listen(3000, () => {
-    console.log("Server running on port 3000");
-  });
-
-})
-.catch((error) => {
-  console.log("Database connection error:", error);
-});
+// 📍 Routes
+app.use("/api/auth", authRoutes);
+app.use("/api/donations", donationRoutes);
 
 
-// Test route
-app.get("/", (req, res) => {
-  res.send(" donation in progress");
-});
-
-
-// API routes
-app.use("/api", routes);
-
-
-// 404 route
-app.use((req, res) => {
+// ❌ 404 Handler
+app.use((req, res, next) => {
   res.status(404).json({
-    message: "Route not found"
+    success: false,
+    message: `Route not found: ${req.originalUrl}`,
   });
 });
+
+
+// ⚠️ Global Error Handler
+app.use((err, req, res, next) => {
+  console.error("ERROR:", err);
+
+  res.status(err.statusCode || 500).json({
+    success: false,
+    message: err.message || "Internal Server Error",
+  });
+});
+
+
+// 🚀 Connect DB & Start Server
+const PORT = process.env.PORT || 5000;
+
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log("MongoDB Connected");
+
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error("DB Connection Error:", err);
+    process.exit(1);
+  });

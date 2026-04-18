@@ -1,17 +1,104 @@
-// donationj-api/index.js
-const express = require('express');
-const mongoose = require('mongoose');
-const bodyParser = require('body-parser');
+const mongoose = require("mongoose");
 
-const app = express();
-const PORT = process.env.PORT || 5000;
+const donationSchema = new mongoose.Schema(
+  {
+    title: {
+      type: String,
+      required: [true, "Donation title is required"],
+      trim: true,
+    },
 
-// Donation Schema
-const donationSchema = new mongoose.Schema({
-  donorName: { type: String, required: true },
-  amount: { type: Number, required: true },
-  itemType: { type: String, enum: ["food", "clothes", "study material"], required: true },
-  status: { type: String, default: "pending" },
-  preparedAt: { type: Date }, // only relevant for food
-}, { timestamps: true });
+    description: {
+      type: String,
+      required: [true, "Donation description is required"],
+    },
 
+    type: {
+      type: String,
+      enum: ["item", "money"],
+      required: true,
+    },
+
+    quantity: {
+      type: Number,
+      default: 1,
+      min: [1, "Quantity must be at least 1"],
+    },
+
+    amount: {
+      type: Number,
+      default: 0,
+      min: [0, "Amount cannot be negative"],
+    },
+
+    // 👤 Donor (User)
+    donor: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+
+    // 🏢 NGO (assigned after acceptance)
+    ngo: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "NGO",
+      default: null,
+    },
+
+    status: {
+      type: String,
+      enum: ["pending", "accepted", "rejected", "completed"],
+      default: "pending",
+    },
+
+    pickupAddress: {
+      type: String,
+      required: function () {
+        return this.type === "item";
+      },
+    },
+
+    scheduledPickupDate: {
+      type: Date,
+    },
+
+    completedAt: {
+      type: Date,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+
+// 🔒 Ensure valid state transitions
+donationSchema.methods.canTransitionTo = function (newStatus) {
+  const validTransitions = {
+    pending: ["accepted", "rejected"],
+    accepted: ["completed"],
+    rejected: [],
+    completed: [],
+  };
+
+  return validTransitions[this.status].includes(newStatus);
+};
+
+
+// 🧠 Pre-save logic for consistency
+donationSchema.pre("save", function (next) {
+  // If donation is completed, set completedAt
+  if (this.isModified("status") && this.status === "completed") {
+    this.completedAt = new Date();
+  }
+
+  // If type is money, quantity should not matter
+  if (this.type === "money") {
+    this.quantity = 0;
+  }
+
+  next();
+});
+
+
+module.exports = mongoose.model("Donation", donationSchema);

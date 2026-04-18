@@ -1,267 +1,243 @@
-// donationj-api/index.js
-    
-const express = require('express');
-const mongoose = require('mongoose');
-const bodyParser = require('body-parser');
-const router = express.Router();
+const Donation = require("../models/Donation");
+const NGO = require("../models/NGO");
 
 
-const app = express();
-const PORT = process.env.PORT || 5000;
-// DONATION
-  // CREATE DONATION
+// 📝 Create Donation (Donor only)
 exports.createDonation = async (req, res) => {
   try {
-    const { donorName, amount, itemType, preparedAt } = req.body;
-    // itemType: "food", "clothes", "study material"
-    // preparedAt: timestamp (only relevant for food)
+    const { title, description, type, quantity, amount, pickupAddress } = req.body;
 
-    // Validate required fields
-    if (!donorName || !amount || !itemType) {
-      return res.status(400).json({ message: "All fields are required" });
+    if (req.user.role !== "donor") {
+      return res.status(403).json({
+        success: false,
+        message: "Only donors can create donations",
+      });
     }
 
-    // Validate item type
-    const validTypes = ["food", "clothes", "study material"];
-    if (!validTypes.includes(itemType)) {
-      return res.status(400).json({ message: "Invalid item type" });
+    if (!title || !description || !type) {
+      return res.status(400).json({
+        success: false,
+        message: "Title, description, and type are required",
+      });
     }
 
-    // Special validation for food
-    if (itemType === "food" && !preparedAt) {
-      return res.status(400).json({ message: "PreparedAt timestamp required for food donations" });
+    if (type === "item" && !pickupAddress) {
+      return res.status(400).json({
+        success: false,
+        message: "Pickup address is required for item donations",
+      });
     }
 
-    // Create donation
+    if (type === "money" && (!amount || amount <= 0)) {
+      return res.status(400).json({
+        success: false,
+        message: "Valid amount is required for money donations",
+      });
+    }
+
     const donation = await Donation.create({
-      donorName,
+      title,
+      description,
+      type,
+      quantity,
       amount,
-      itemType,
-      status: "pending",
-      preparedAt
+      pickupAddress,
+      donor: req.user._id,
     });
 
     res.status(201).json({
+      success: true,
       message: "Donation created successfully",
-      donation: {
-        id: donation._id,
-        donor: donation.donorName,
-        amount: donation.amount,
-        itemType: donation.itemType,
-        status: donation.status,
-        preparedAt: donation.preparedAt,
-        createdAt: donation.createdAt
-      }
+      data: donation,
     });
-
   } catch (error) {
-    console.error("Error creating donation:", error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      success: false,
+      message: "Failed to create donation",
+      error: error.message,
+    });
   }
 };
-// DISPLAY ALL DONATIONS (LIST)
+
+
+// 📥 Get All Donations (Role-based)
 exports.getDonations = async (req, res) => {
   try {
-    // Fetch all donations, basis of maximum amount first
-    const donations = await Donation.find().sort({ amount: -1 });
+    let filter = {};
 
-    if (!donations || donations.length === 0) {
-      return res.status(404).json({ message: "No donations found" });
+    if (req.user.role === "donor") {
+      filter.donor = req.user._id;
     }
 
-    res.status(200).json({
-      message: "Donation list retrieved successfully",
-      donations: donations.map(donation => ({
-        id: donation._id,
-        donor: donation.donorName,
-        amount: donation.amount,
-        itemType: donation.itemType,
-        status: donation.status,
-        preparedAt: donation.preparedAt,
-        createdAt: donation.createdAt
-      }))
-    });
+    if (req.user.role === "ngo") {
+      const ngoProfile = await NGO.findOne({ user: req.user._id });
 
-  } catch (error) {
-    console.error("Error retrieving donations:", error);
-    res.status(500).json({ message: error.message });
-  }
-};
-// ACCEPT DONATION
-exports.acceptDonation = async (req, res) => {
-  try {
-    const { donationId, itemType, preparedAt } = req.body;
-    // itemType: "food", "clothes", "study material"
-    // preparedAt: timestamp (only relevant for food)
-
-    // Validate item type
-    const validTypes = ["food", "clothes", "study material"];
-    if (!validTypes.includes(itemType)) {
-      return res.status(400).json({ message: "Invalid item type" });
-    }
-
-    // Find donation
-    const donation = await Donation.findById(donationId);
-    if (!donation) {
-      return res.status(404).json({ message: "Donation not found" });
-    }
-
-    // Prevent duplicate handling
-    if (donation.status !== "pending") {
-      return res.status(400).json({ message: "Donation already processed" });
-    }
-
-    // Special rule for food donations
-    if (itemType === "food") {
-      if (!preparedAt) {
-        return res.status(400).json({ message: "PreparedAt timestamp required for food donations" });
-      }
-
-      const hoursSincePrepared = (Date.now() - new Date(preparedAt)) / (1000 * 60 * 60);
-      if (hoursSincePrepared > 24) {
-        donation.status = "rejected";
-        donation.itemType = "food";
-        await donation.save();
-        return res.status(200).json({
-          message: "Food donation rejected (prepared more than 24 hrs ago)",
-          donation: {
-            id: donation._id,
-            donor: donation.donorName,
-            amount: donation.amount,
-            itemType: donation.itemType,
-            status: donation.status,
-            preparedAt: donation.preparedAt,
-            createdAt: donation.createdAt
-          }
+      if (!ngoProfile) {
+        return res.status(400).json({
+          success: false,
+          message: "NGO profile not found",
         });
       }
+
+      filter = {
+        $or: [
+          { status: "pending" },
+          { ngo: ngoProfile._id },
+        ],
+      };
     }
 
-    // Accept donation
-    donation.status = "accepted";
-    donation.itemType = itemType;
-    donation.preparedAt = preparedAt || donation.preparedAt;
+    const donations = await Donation.find(filter)
+      .populate("donor", "name email")
+      .populate("ngo");
+
+    res.status(200).json({
+      success: true,
+      count: donations.length,
+      data: donations,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch donations",
+      error: error.message,
+    });
+  }
+};
+
+
+// 🔄 Update Donation Status (NGO only)
+exports.updateDonationStatus = async (req, res) => {
+  try {
+    const { status } = req.body;
+
+    const donation = await Donation.findById(req.params.id);
+
+    if (!donation) {
+      return res.status(404).json({
+        success: false,
+        message: "Donation not found",
+      });
+    }
+
+    if (req.user.role !== "ngo") {
+      return res.status(403).json({
+        success: false,
+        message: "Only NGOs can update donation status",
+      });
+    }
+
+    // 🔑 Fetch NGO profile
+    const ngoProfile = await NGO.findOne({ user: req.user._id });
+
+    if (!ngoProfile) {
+      return res.status(400).json({
+        success: false,
+        message: "NGO profile not found",
+      });
+    }
+
+    // 🚫 Only verified NGOs should accept donations
+    if (status === "accepted" && !ngoProfile.isVerified) {
+      return res.status(403).json({
+        success: false,
+        message: "Only verified NGOs can accept donations",
+      });
+    }
+
+    // Enforce valid transitions
+    if (!donation.canTransitionTo(status)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid status transition from ${donation.status} to ${status}`,
+      });
+    }
+
+    // Assign NGO correctly
+    if (status === "accepted") {
+      if (donation.ngo && donation.ngo.toString() !== ngoProfile._id.toString()) {
+        return res.status(400).json({
+          success: false,
+          message: "Donation already accepted by another NGO",
+        });
+      }
+
+      donation.ngo = ngoProfile._id;
+    }
+
+    donation.status = status;
 
     await donation.save();
 
     res.status(200).json({
-      message: "Donation accepted successfully",
-      donation: {
-        id: donation._id,
-        donor: donation.donorName,
-        amount: donation.amount,
-        itemType: donation.itemType,
-        status: donation.status,
-        preparedAt: donation.preparedAt,
-        createdAt: donation.createdAt
-      }
+      success: true,
+      message: "Donation status updated successfully",
+      data: donation,
     });
-
   } catch (error) {
-    console.error("Error accepting donation:", error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      success: false,
+      message: "Failed to update donation status",
+      error: error.message,
+    });
   }
-};// REJECT DONATION
-exports.rejectDonation = async (req, res) => {
+};
+
+
+// 📄 Get Single Donation
+exports.getDonationById = async (req, res) => {
   try {
-    const { donationId, itemType, preparedAt } = req.body;
-    // itemType: "food", "clothes", "study material"
-    // preparedAt: timestamp (only relevant for food)
+    const donation = await Donation.findById(req.params.id)
+      .populate("donor", "name email")
+      .populate("ngo");
 
-    // Validate item type
-    const validTypes = ["food", "clothes", "study material"];
-    if (!validTypes.includes(itemType)) {
-      return res.status(400).json({ message: "Invalid item type" });
-    }
-
-    // Find donation
-    const donation = await Donation.findById(donationId);
     if (!donation) {
-      return res.status(404).json({ message: "Donation not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Donation not found",
+      });
     }
 
-    // Prevent duplicate handling
-    if (donation.status !== "pending") {
-      return res.status(400).json({ message: "Donation already processed" });
+    if (
+      req.user.role === "donor" &&
+      donation.donor.toString() !== req.user._id.toString()
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied",
+      });
     }
 
-    // Special rule for food donations
-    if (itemType === "food") {
-      if (!preparedAt) {
-        return res.status(400).json({ message: "PreparedAt timestamp required for food donations" });
+    if (req.user.role === "ngo") {
+      const ngoProfile = await NGO.findOne({ user: req.user._id });
+
+      if (!ngoProfile) {
+        return res.status(400).json({
+          success: false,
+          message: "NGO profile not found",
+        });
       }
 
-      const hoursSincePrepared = (Date.now() - new Date(preparedAt)) / (1000 * 60 * 60);
-      if (hoursSincePrepared > 24) {
-        donation.status = "rejected";
-        donation.itemType = "food";
-        donation.preparedAt = preparedAt;
-        await donation.save();
-        return res.status(200).json({
-          message: "Food donation rejected (prepared more than 24 hrs ago)",
-          donation: {
-            id: donation._id,
-            donor: donation.donorName,
-            amount: donation.amount,
-            itemType: donation.itemType,
-            status: donation.status,
-            preparedAt: donation.preparedAt,
-            createdAt: donation.createdAt
-          }
+      if (
+        donation.ngo &&
+        donation.ngo.toString() !== ngoProfile._id.toString()
+      ) {
+        return res.status(403).json({
+          success: false,
+          message: "Access denied",
         });
       }
     }
 
-    // Reject donation (normal case)
-    donation.status = "rejected";
-    donation.itemType = itemType;
-    donation.preparedAt = preparedAt || donation.preparedAt;
-
-    await donation.save();
-
     res.status(200).json({
-      message: "Donation rejected successfully",
-      donation: {
-        id: donation._id,
-        donor: donation.donorName,
-        amount: donation.amount,
-        itemType: donation.itemType,
-        status: donation.status,
-        preparedAt: donation.preparedAt,
-        createdAt: donation.createdAt
-      }
+      success: true,
+      data: donation,
     });
-
   } catch (error) {
-    console.error("Error rejecting donation:", error);
-    res.status(500).json({ message: error.message });
-  }
-};
-// DONATION HISTORY
-exports.getDonationHistory = async (req, res) => {
-  try {
-    // Fetch all donations, newest first
-    const donations = await Donation.find().sort({ createdAt: -1 });
-
-    if (!donations || donations.length === 0) {
-      return res.status(404).json({ message: "No donation history found" });
-    }
-
-    res.status(200).json({
-      message: "Donation history retrieved successfully",
-      donations: donations.map(donation => ({
-        id: donation._id,
-        donor: donation.donorName,
-        amount: donation.amount,
-        itemType: donation.itemType,
-        status: donation.status,
-        preparedAt: donation.preparedAt,
-        createdAt: donation.createdAt
-      }))
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch donation",
+      error: error.message,
     });
-
-  } catch (error) {
-    console.error("Error retrieving donation history:", error);
-    res.status(500).json({ message: error.message });
   }
 };

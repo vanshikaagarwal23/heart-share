@@ -1,18 +1,51 @@
 const express = require("express");
 const router = express.Router();
 
-const { createDonation,getDonations,acceptDonation, rejectDonation,getDonationHistory} = require("../controllers/donationController");
+const {
+  createDonation,
+  getDonations,
+  getDonationById,
+  updateDonationStatus,
+} = require("../controllers/donationController");
 
-// Routes
-// Create a donation
-router.post("/donation/createdonation", createDonation);   
-// Get all donations
-router.get("/donation/getdonations", getDonations);
-// Accept a donation
-router.post("/donation/acceptdonation/:id", acceptDonation);        
-// Reject a donation
-router.post("/donation/rejectdonation/:id", rejectDonation);
-// Get donation history for a user
-router.get("/donation/donationhistory/:userId", getDonationHistory);
+const {
+  protect,
+  authorizeRoles,
+} = require("../middleware/authMiddleware");
+
+
+// 📝 Create donation (Donor only)
+router.post(
+  "/createdonation",
+  protect,
+  authorizeRoles("donor"),
+  createDonation
+);
+
+
+// 📥 Get all donations
+router.get(
+  "/getdonations",
+  protect,
+  getDonations
+);
+
+
+// 📄 Get single donation
+router.get(
+  "/getdonation/:id",
+  protect,
+  getDonationById
+);
+
+
+// 🔄 Update donation status (NGO only)
+router.patch(
+  "/updatestatus/:id",
+  protect,
+  authorizeRoles("ngo"),
+  updateDonationStatus
+);
+
 
 module.exports = router;
