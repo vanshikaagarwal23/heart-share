@@ -1,0 +1,27 @@
+.badge {
+  font-size: 10px;
+  font-weight: 500;
+  padding: 3px 8px;
+  border-radius: 20px;
+}
+
+/* variants */
+.badge.active {
+  background: #e8fdf0;
+  color: #14532d;
+}
+
+.badge.leave {
+  background: #fdf5e8;
+  color: #78350f;
+}
+
+.badge.closing {
+  background: #fde8e8;
+  color: #8b2020;
+}
+
+.badge.new {
+  background: #e8f0fd;
+  color: #1e3a8a;
+}

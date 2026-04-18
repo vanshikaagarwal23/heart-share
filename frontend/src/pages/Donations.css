@@ -1,0 +1,118 @@
+/* Donations Page */
+
+.page {
+  flex: 1;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.page-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 22px;
+  color: #1a1a1a;
+}
+
+.page-subtitle {
+  font-size: 12px;
+  color: #888;
+  margin-top: 2px;
+}
+
+.filter-group {
+  display: flex;
+  gap: 6px;
+}
+
+.filter-btn {
+  font-size: 12px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  border: 0.5px solid rgba(0,0,0,0.12);
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  background: #f4f0ec;
+  color: #555;
+}
+
+.filter-btn.active {
+  background: #c0453a;
+  color: #fff;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+}
+
+.stat-value {
+  font-size: 20px;
+  font-weight: 500;
+  color: #1a1a1a;
+}
+
+.table-card {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.table th {
+  text-align: left;
+  padding: 8px 12px;
+  color: #888;
+  font-weight: 500;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 0.5px solid rgba(0,0,0,0.08);
+}
+
+.table td {
+  padding: 10px 12px;
+}
+
+.row {
+  border-bottom: 0.5px solid rgba(0,0,0,0.05);
+}
+
+.amount {
+  color: #c0453a;
+  font-weight: 500;
+}
+
+.name {
+  color: #1a1a1a;
+  font-weight: 500;
+}
+
+.muted {
+  color: #888;
+}
+
+.secondary {
+  color: #555;
+}
