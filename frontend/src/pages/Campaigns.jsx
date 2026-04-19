@@ -8,26 +8,50 @@ function CampaignsPage() {
   const [selected, setSelected] = useState(null);
   const [campaigns, setCampaigns] = useState([]);
 
+  const [showModal, setShowModal] = useState(false);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [goalAmount, setGoalAmount] = useState("");
+
+  const fetchCampaigns = async () => {
+    try {
+      const res = await apiRequest("/campaigns");
+      const data = res.data || res;
+
+      const formatted = data.map((c) => ({
+        ...c,
+        pct: Math.min(Math.floor((c.raised / c.goalAmount) * 100), 100),
+        color: "#c0453a",
+      }));
+
+      setCampaigns(formatted);
+    } catch (err) {
+      console.error("Campaign UI Error:", err.message);
+    }
+  };
+
   useEffect(() => {
-    const fetchCampaigns = async () => {
-      try {
-        const res = await apiRequest("/campaigns");
-        const data = res.data || res;
-
-        const formatted = data.map((c) => ({
-          ...c,
-          pct: Math.min(Math.floor((c.raised / c.goalAmount) * 100), 100),
-          color: "#c0453a",
-        }));
-
-        setCampaigns(formatted);
-      } catch (err) {
-        console.error("Campaign UI Error:", err.message);
-      }
-    };
-
     fetchCampaigns();
   }, []);
+
+  const handleCreate = async () => {
+    try {
+      await apiRequest("/campaigns", "POST", {
+        title,
+        description,
+        goalAmount: Number(goalAmount),
+      });
+
+      setShowModal(false);
+      setTitle("");
+      setDescription("");
+      setGoalAmount("");
+
+      fetchCampaigns();
+    } catch (err) {
+      console.error(err.message);
+    }
+  };
 
   if (selected !== null) {
     const campaign = campaigns[selected];
@@ -81,11 +105,20 @@ function CampaignsPage() {
   return (
     <div className="flex-1 p-5 md:p-7 flex flex-col overflow-hidden">
 
-      <div className="mb-6">
-        <div className="text-[22px]">Campaigns</div>
-        <div className="text-[12px] text-[#888]">
-          All active fundraising campaigns
+      <div className="mb-6 flex justify-between items-center">
+        <div>
+          <div className="text-[22px]">Campaigns</div>
+          <div className="text-[12px] text-[#888]">
+            All active fundraising campaigns
+          </div>
         </div>
+
+        <button
+          onClick={() => setShowModal(true)}
+          className="bg-[#ff6600] hover:bg-[#e65c00] text-white px-4 py-2 rounded text-sm"
+        >
+          + Create Campaign
+        </button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 overflow-y-auto">
@@ -112,6 +145,54 @@ function CampaignsPage() {
           </Card>
         ))}
       </div>
+
+      {showModal && (
+        <div className="fixed inset-0 bg-black/30 flex justify-center items-center z-50">
+          <div className="bg-white p-6 rounded-xl w-[320px] shadow-lg">
+
+            <div className="text-lg mb-4">Create Campaign</div>
+
+            <input
+              placeholder="Title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full mb-3 p-2 border border-black/10 rounded outline-none focus:ring-2 focus:ring-[#ff6600]/40"
+            />
+
+            <input
+              placeholder="Description"
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="w-full mb-3 p-2 border border-black/10 rounded outline-none focus:ring-2 focus:ring-[#ff6600]/40"
+            />
+
+            <input
+              placeholder="Goal Amount"
+              type="number"
+              value={goalAmount}
+              onChange={(e) => setGoalAmount(e.target.value)}
+              className="w-full mb-4 p-2 border border-black/10 rounded outline-none focus:ring-2 focus:ring-[#ff6600]/40"
+            />
+
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setShowModal(false)}
+                className="px-3 py-1 text-sm"
+              >
+                Cancel
+              </button>
+
+              <button
+                onClick={handleCreate}
+                className="bg-[#ff6600] hover:bg-[#e65c00] text-white px-3 py-1 rounded text-sm"
+              >
+                Create
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
 
     </div>
   );
