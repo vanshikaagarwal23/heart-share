@@ -1,108 +1,115 @@
-import {useState} from "react";
-import "./Campaigns.css";
-import S from "../components/SharedStyles";
-import {campaigns, volunteers} from "../data.js";
-import StatusBadge from "../components/StatusBadge";
-import Avatar from "../components/Avatar";
-import ProgressBar from "../components/ProgressBar";
+import { useState, useEffect } from "react";
+import StatusBadge from "../components/ui/StatusBadge";
+import ProgressBar from "../components/ui/ProgressBar";
+import Card from "../components/common/Card";
+import { apiRequest } from "../services/api";
 
 function CampaignsPage() {
   const [selected, setSelected] = useState(null);
+  const [campaigns, setCampaigns] = useState([]);
 
-  // ✅ DETAIL VIEW
+  useEffect(() => {
+    const fetchCampaigns = async () => {
+      try {
+        const res = await apiRequest("/campaigns");
+        const data = res.data || res;
+
+        const formatted = data.map((c) => ({
+          ...c,
+          pct: Math.min(Math.floor((c.raised / c.goalAmount) * 100), 100),
+          color: "#c0453a",
+        }));
+
+        setCampaigns(formatted);
+      } catch (err) {
+        console.error("Campaign UI Error:", err.message);
+      }
+    };
+
+    fetchCampaigns();
+  }, []);
+
   if (selected !== null) {
     const campaign = campaigns[selected];
     if (!campaign) return null;
 
     return (
-      <div className="page">
+      <div className="flex-1 p-5 md:p-7 flex flex-col overflow-hidden">
 
-        <button className="back-btn" onClick={() => setSelected(null)}>
+        <button
+          onClick={() => setSelected(null)}
+          className="text-[12px] text-[#c0453a] mb-5"
+        >
           ← Back to Campaigns
         </button>
 
-        <div className="page-title">{campaign.name}</div>
-        <StatusBadge status={campaign.status} />
+        <div className="text-[22px]">{campaign.title}</div>
 
-        <div className="grid-3">
-          {[
-            { label: "Raised", value: campaign.raised },
-            { label: "Goal", value: campaign.goal },
-            { label: "Volunteers", value: campaign.volunteers },
-          ].map((stat) => (
-            <div key={stat.label} style={S.card}>
-              <div className="stat-label">{stat.label}</div>
-              <div className="stat-value">{stat.value}</div>
-            </div>
-          ))}
+        <div className="mt-2 mb-4">
+          <StatusBadge status={campaign.isActive ? "Active" : "Inactive"} />
         </div>
 
-        <div style={S.card}>
-          <div className="card-row">
-            <span>Funding Progress</span>
-            <span style={{ color: campaign.color }}>
-              {campaign.pct}%
-            </span>
+        <div className="grid grid-cols-3 gap-3 my-5">
+          <Card>
+            <div>Raised</div>
+            <div>₹{campaign.raised}</div>
+          </Card>
+
+          <Card>
+            <div>Goal</div>
+            <div>₹{campaign.goalAmount}</div>
+          </Card>
+
+          <Card>
+            <div>Donations</div>
+            <div>{campaign.donationsCount}</div>
+          </Card>
+        </div>
+
+        <Card>
+          <div className="flex justify-between mb-2">
+            <span>Progress</span>
+            <span>{campaign.pct}%</span>
           </div>
-
           <ProgressBar pct={campaign.pct} color={campaign.color} />
-        </div>
-
-        <div style={S.card}>
-          <div className="section-title">Assigned Volunteers</div>
-
-          {volunteers.slice(0, 3).map((v, i) => (
-            <div key={i} className="vol-row">
-              <Avatar initials={v.initials} bg={v.bg} text={v.text} />
-              <div>
-                <div className="name">{v.name}</div>
-                <div className="muted">{v.role}</div>
-              </div>
-              <StatusBadge status={v.status} />
-            </div>
-          ))}
-        </div>
+        </Card>
 
       </div>
     );
   }
 
-  // ✅ LIST VIEW
   return (
-    <div className="page">
+    <div className="flex-1 p-5 md:p-7 flex flex-col overflow-hidden">
 
-      <div className="page-header">
-        <div className="page-title">Campaigns</div>
-        <div className="page-subtitle">
+      <div className="mb-6">
+        <div className="text-[22px]">Campaigns</div>
+        <div className="text-[12px] text-[#888]">
           All active fundraising campaigns
         </div>
       </div>
 
-      <div className="campaign-grid">
-        {campaigns.map((campaign, i) => (
-          <div
-            key={i}
-            onClick={() => setSelected(i)}
-            className="campaign-card"
-            style={S.card}
-          >
-            <div className="card-header">
-              <div className="card-title">{campaign.name}</div>
-              <StatusBadge status={campaign.status} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 overflow-y-auto">
+        {campaigns.map((c, i) => (
+          <Card key={i} onClick={() => setSelected(i)} className="cursor-pointer">
+
+            <div className="flex justify-between mb-2">
+              <div>{c.title}</div>
+              <StatusBadge status={c.isActive ? "Active" : "Inactive"} />
             </div>
 
-            <div className="card-row">
-              <span>{campaign.raised} raised</span>
-              <span>Goal: {campaign.goal}</span>
+            <div className="flex justify-between text-xs mb-2">
+              <span>₹{c.raised} raised</span>
+              <span>Goal: ₹{c.goalAmount}</span>
             </div>
 
-            <ProgressBar pct={campaign.pct} color={campaign.color} />
+            <ProgressBar pct={c.pct} color={c.color} />
 
-            <div className="card-footer">
-              <span>{campaign.pct}% funded</span>
-              <span>{campaign.volunteers} volunteers</span>
+            <div className="flex justify-between text-xs mt-2 text-[#888]">
+              <span>{c.pct}% funded</span>
+              <span>{c.donationsCount} donations</span>
             </div>
-          </div>
+
+          </Card>
         ))}
       </div>
 

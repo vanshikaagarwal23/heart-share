@@ -5,68 +5,106 @@ import { slideRight } from "../animation";
 
 export default function Signup() {
   const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
   const navigate = useNavigate();
 
+  const handleSignup = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const res = await fetch("http://localhost:5000/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Signup failed");
+      }
+
+      // ✅ Store token
+      localStorage.setItem("token", data.token || data.data?.token);
+
+      navigate("/dashboard");
+
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <motion.div {...slideRight} style={styles.container}>
+    <motion.div {...slideRight} className="flex h-screen bg-[#f5f0eb]">
       
-      {}
-      <div style={styles.card}>
-        <h1 style={styles.title}>Create Account</h1>
-        <p style={styles.subtitle}>Join the kindness movement!</p>
+      <div className="flex-1 flex flex-col justify-center items-center">
+        <h1 className="text-[#ff6600] text-[42px]">Create Account</h1>
+        <p className="mb-5 text-[#555]">
+          <b>Join the kindness movement!</b>
+        </p>
 
         <input
           placeholder="Full Name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          style={styles.input}
+          className="m-[10px] p-3 w-[250px] outline-none border border-black/10 rounded"
         />
-        <input placeholder="Email address" style={styles.input} />
-        <input placeholder="Password" type="password" style={styles.input} />
+
+        <input
+          placeholder="Email address"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="m-[10px] p-3 w-[250px] outline-none border border-black/10 rounded"
+        />
+
+        <input
+          placeholder="Password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="m-[10px] p-3 w-[250px] outline-none border border-black/10 rounded"
+        />
 
         <button
-          style={styles.button}
-          onClick={() => navigate("/dashboard", { state: { name } })}
+          onClick={handleSignup}
+          disabled={loading}
+          className="bg-[#ff6600] text-white p-3 w-[250px] rounded-[8px]"
         >
-          Signup
+          {loading ? "Creating..." : "Signup"}
         </button>
 
-        <p>
-          Already have an account? <Link to="/">Login</Link>
+        {error && (
+          <p className="text-red-500 mt-2">{error}</p>
+        )}
+
+        <p className="mt-3">
+          Already have an account? <Link to="/" className="text-blue-500 hover:underline">
+            Login
+          </Link>
         </p>
       </div>
 
-      {}
-      <div style={styles.left}>
+      <div className="flex-1 flex justify-center items-center">
         <img
           src="https://user8320.na.imgto.link/public/20260417/login.avif"
-          style={styles.image}
+          className="w-[70%]"
         />
       </div>
+
     </motion.div>
   );
 }
-
-const styles = {
-  container: { display: "flex", height: "100vh", background: "#f5f0eb" },
-  left: { flex: 1, display: "flex", justifyContent: "center", alignItems: "center" },
-  image: { width: "70%" },
-  card: {
-    flex: 1,
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  title: { color: "#ff6600", fontSize: "42px" },
-  subtitle: { marginBottom: "20px", color: "#555" },
-  input: { margin: "10px", padding: "12px", width: "250px" },
-  button: {
-    background: "#ff6600",
-    color: "#fff",
-    padding: "12px",
-    width: "250px",
-    border: "none",
-    borderRadius: "8px",
-  },
-};

@@ -8,6 +8,9 @@ const morgan = require("morgan");
 const authRoutes = require("./src/routes/authRoutes");
 const donationRoutes = require("./src/routes/donationRoutes");
 const ngoRoutes = require("./src/routes/ngoRoutes");
+const campaignRoutes = require("./src/routes/campaignRoutes");
+const volunteerRoutes = require("./src/routes/volunteerRoutes");
+
 
 const app = express();
 app.use(morgan("dev"));
@@ -38,6 +41,9 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/donations", donationRoutes);
 app.use("/api/ngo", ngoRoutes);
+app.use("/api/campaigns", campaignRoutes);
+app.use("/api/volunteers", volunteerRoutes);
+
 
 // ❌ 404 Handler
 app.use((req, res, next) => {

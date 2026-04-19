@@ -1,73 +1,237 @@
-import {useState} from "react";
-import S from "../components/SharedStyles";
-import "./Donations.css";
-import {allDonations} from "../data";
+import { useState, useEffect } from "react";
+import Card from "../components/common/Card";
+import StatusBadge from "../components/ui/StatusBadge";
+import { apiRequest } from "../services/api";
 
 function DonationsPage() {
   const [filter, setFilter] = useState("All");
+  const [donations, setDonations] = useState([]);
+
+  // 🆕 form state
+  const [form, setForm] = useState({
+    title: "",
+    description: "",
+    type: "money",
+    amount: "",
+  });
+
+  // 🆕 role detection
+  const token = localStorage.getItem("token");
+  let role = null;
+
+  if (token) {
+    try {
+      const decoded = JSON.parse(atob(token.split(".")[1]));
+      role = decoded.role;
+    } catch (err) {
+      console.error("Token decode error");
+    }
+  }
+
   const methods = ["All", "UPI", "Card", "Bank"];
-  const filtered = filter === "All" ? allDonations : allDonations.filter(d => d.method === filter);
+
+  // 📥 fetch donations
+  const fetchDonations = async () => {
+    try {
+      const res = await apiRequest("/donations/getdonation");
+      const data = res.data || res;
+      setDonations(data);
+    } catch (err) {
+      console.error("Donation Fetch Error:", err.message);
+    }
+  };
+
+  useEffect(() => {
+    fetchDonations();
+  }, []);
+
+  // 🆕 create donation
+  const handleCreate = async () => {
+    try {
+      await apiRequest("/donations/createdonation", "POST", form);
+
+      alert("Donation Created ✅");
+
+      setForm({
+        title: "",
+        description: "",
+        type: "money",
+        amount: "",
+      });
+
+      fetchDonations();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  // 🆕 update status (NGO only)
+  const handleStatusUpdate = async (id, status) => {
+    try {
+      await apiRequest(`/donations/updatestatus/${id}`, "PATCH", {
+        status,
+      });
+
+      alert(`Donation ${status} ✅`);
+      fetchDonations();
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  const filtered =
+    filter === "All"
+      ? donations
+      : donations.filter((d) => d.method === filter);
 
   return (
-    <div style={{ flex: 1, padding: "28px", display: "flex", flexDirection: "column", overflow: "hidden" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "24px" }}>
-        <div>
-          <div style={{ fontFamily: "'DM Serif Display',serif", fontSize: "22px", color: "#1a1a1a" }}>Donations</div>
-          <div style={{ fontSize: "12px", color: "#888", marginTop: "2px" }}>All incoming contributions</div>
+    <div className="flex-1 p-5 md:p-7 flex flex-col overflow-hidden">
+
+      {/* CREATE DONATION FORM */}
+      <Card className="mb-5">
+        <div className="text-[14px] font-medium mb-3">Create Donation</div>
+
+        <div className="flex flex-wrap gap-2">
+          <input
+            placeholder="Title"
+            value={form.title}
+            onChange={(e) =>
+              setForm({ ...form, title: e.target.value })
+            }
+            className="border p-2 rounded"
+          />
+
+          <input
+            placeholder="Description"
+            value={form.description}
+            onChange={(e) =>
+              setForm({ ...form, description: e.target.value })
+            }
+            className="border p-2 rounded"
+          />
+
+          <input
+            placeholder="Amount"
+            type="number"
+            value={form.amount}
+            onChange={(e) =>
+              setForm({ ...form, amount: e.target.value })
+            }
+            className="border p-2 rounded"
+          />
+
+          <button
+            onClick={handleCreate}
+            className="bg-[#c0453a] text-white px-4 rounded"
+          >
+            Create
+          </button>
         </div>
-        <div style={{ display: "flex", gap: "6px" }}>
-          {methods.map(m => (
-            <button key={m} onClick={() => setFilter(m)} style={{
-              fontSize: "12px", padding: "6px 12px", borderRadius: "20px",
-              border: "0.5px solid rgba(0,0,0,0.12)", cursor: "pointer",
-              fontFamily: "'DM Sans',sans-serif",
-              background: filter === m ? "#c0453a" : "#f4f0ec",
-              color: filter === m ? "#fff" : "#555",
-            }}>{m}</button>
+      </Card>
+
+      {/* HEADER */}
+      <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-3 mb-6">
+        <div>
+          <div className="font-['DM_Serif_Display'] text-[22px] text-[#1a1a1a]">
+            Donations
+          </div>
+          <div className="text-[12px] text-[#888] mt-[2px]">
+            All incoming contributions
+          </div>
+        </div>
+
+        <div className="flex flex-wrap gap-[6px]">
+          {methods.map((m) => (
+            <button
+              key={m}
+              onClick={() => setFilter(m)}
+              className={`text-[12px] px-3 py-[6px] rounded-full border border-black/10 ${
+                filter === m
+                  ? "bg-[#c0453a] text-white"
+                  : "bg-[#f4f0ec] text-[#555]"
+              }`}
+            >
+              {m}
+            </button>
           ))}
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "12px", marginBottom: "20px" }}>
-        {[
-          { label: "Total Collected", value: "₹2.7L" },
-          { label: "This Month",      value: "₹38,000" },
-          { label: "Avg Donation",    value: "₹2,160" },
-        ].map(s => (
-          <div key={s.label} style={S.card}>
-            <div style={{ fontSize: "11px", color: "#888", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "6px" }}>{s.label}</div>
-            <div style={{ fontSize: "20px", fontWeight: 500, color: "#1a1a1a" }}>{s.value}</div>
+      {/* STATS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-5">
+        <Card>
+          <div>Total Donations</div>
+          <div>₹{donations.reduce((a, d) => a + (d.amount || 0), 0)}</div>
+        </Card>
+
+        <Card>
+          <div>Total Entries</div>
+          <div>{donations.length}</div>
+        </Card>
+
+        <Card>
+          <div>Avg Donation</div>
+          <div>
+            ₹
+            {donations.length
+              ? Math.floor(
+                  donations.reduce((a, d) => a + (d.amount || 0), 0) /
+                    donations.length
+                )
+              : 0}
           </div>
-        ))}
+        </Card>
       </div>
 
-      <div style={{ ...S.card, flex: 1, overflowY: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
+      {/* TABLE */}
+      <Card className="flex-1 overflow-auto">
+        <table className="w-full text-[13px]">
           <thead>
             <tr>
-              {["Donor","Amount","Campaign","Date","Method"].map(h => (
-                <th key={h} style={{ textAlign: "left", padding: "8px 12px", color: "#888", fontWeight: 500, fontSize: "11px", textTransform: "uppercase", letterSpacing: "0.05em", borderBottom: "0.5px solid rgba(0,0,0,0.08)" }}>{h}</th>
-              ))}
+              <th>Title</th>
+              <th>Amount</th>
+              <th>Date</th>
+              <th>Status</th>
+              {role === "ngo" && <th>Actions</th>}
             </tr>
           </thead>
+
           <tbody>
             {filtered.map((d, i) => (
-              <tr key={i} style={{ borderBottom: "0.5px solid rgba(0,0,0,0.05)" }}>
-                <td style={{ padding: "10px 12px", color: "#1a1a1a", fontWeight: 500 }}>{d.name}</td>
-                <td style={{ padding: "10px 12px", color: "#c0453a", fontWeight: 500 }}>{d.amount}</td>
-                <td style={{ padding: "10px 12px", color: "#555" }}>{d.campaign}</td>
-                <td style={{ padding: "10px 12px", color: "#888" }}>{d.date}</td>
-                <td style={{ padding: "10px 12px" }}>
-                  <span style={S.badge(
-                    d.method === "UPI" ? "#1e3a8a" : d.method === "Card" ? "#14532d" : "#78350f",
-                    d.method === "UPI" ? "#e8f0fd" : d.method === "Card" ? "#e8fdf0" : "#fdf5e8"
-                  )}>{d.method}</span>
-                </td>
+              <tr key={i}>
+                <td>{d.title}</td>
+                <td>₹{d.amount}</td>
+                <td>{new Date(d.createdAt).toLocaleDateString()}</td>
+                <td className="px-3 py-[10px]">
+  <StatusBadge status={d.status} />
+</td>
+
+                {role === "ngo" && (
+                  <td className="flex gap-2">
+                    <button
+                      onClick={() =>
+                        handleStatusUpdate(d._id, "accepted")
+                      }
+                      className="bg-green-500 text-white px-2 rounded"
+                    >
+                      Accept
+                    </button>
+
+                    <button
+                      onClick={() =>
+                        handleStatusUpdate(d._id, "rejected")
+                      }
+                      className="bg-red-500 text-white px-2 rounded"
+                    >
+                      Reject
+                    </button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>
         </table>
-      </div>
+      </Card>
     </div>
   );
 }
