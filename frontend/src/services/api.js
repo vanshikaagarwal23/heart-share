@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:5000/api";
+const BASE_URL = "https://heart-share-backend.onrender.com/api";
 
 // 🔐 Get token safely
 const getToken = () => {
