@@ -8,6 +8,7 @@ function CampaignsPage() {
   const [selected, setSelected] = useState(null);
   const [campaigns, setCampaigns] = useState([]);
  const [selectedCampaign, setSelectedCampaign] = useState(null);
+ const [volunteerStatus, setVolunteerStatus] = useState(null);
 const [applied, setApplied] = useState(false);
 const [loadingApply, setLoadingApply] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -35,6 +36,33 @@ const [loadingApply, setLoadingApply] = useState(false);
   useEffect(() => {
     fetchCampaigns();
   }, []);
+
+  useEffect(() => {
+  const fetchStatus = async () => {
+    if (!selectedCampaign) return;
+
+    try {
+      const res = await apiRequest("/volunteers/my");
+      const data = res.data || res;
+
+      const match = data.find(
+        (v) => v.campaign?._id === selectedCampaign._id
+      );
+
+      if (match) {
+        setVolunteerStatus(match.status);
+        setApplied(true);
+      } else {
+        setVolunteerStatus(null);
+        setApplied(false);
+      }
+    } catch (err) {
+      console.error(err.message);
+    }
+  };
+
+  fetchStatus();
+}, [selectedCampaign]);
 
   const handleCreate = async () => {
     try {
@@ -64,6 +92,7 @@ const [loadingApply, setLoadingApply] = useState(false);
     });
 
     setApplied(true);
+    setVolunteerStatus("pending");
   } catch (err) {
     console.error(err.message);
   } finally {
@@ -280,24 +309,33 @@ const [loadingApply, setLoadingApply] = useState(false);
 
       <div className="mt-4">
         <button
-          onClick={handleApply}
-          disabled={applied || loadingApply}
-          className={`w-full py-2 rounded text-white text-sm transition ${
-            applied
-              ? "bg-gray-400"
-              : "bg-[#ff6600] hover:bg-[#e65c00]"
-          }`}
-        >
-          {applied
-            ? "Applied"
-            : loadingApply
-            ? "Applying..."
-            : "Volunteer Myself"}
-        </button>
+  onClick={handleApply}
+  disabled={applied || loadingApply}
+  className={`w-full py-2 rounded text-white text-sm transition ${
+    applied
+      ? "bg-gray-400 cursor-not-allowed"
+      : "bg-[#ff6600] hover:bg-[#e65c00]"
+  }`}
+>
+  {volunteerStatus === "approved"
+    ? "Approved"
+    : volunteerStatus === "rejected"
+    ? "Rejected"
+    : volunteerStatus === "pending"
+    ? "Pending"
+    : loadingApply
+    ? "Applying..."
+    : "Volunteer Myself"}
+</button>
       </div>
 
       <div className="mt-3 text-xs text-center text-[#888]">
-        Status: {applied ? "Pending" : "Not Applied"}
+       <div className="mt-3 text-xs text-center text-[#888]">
+  Status:{" "}
+  {volunteerStatus
+    ? volunteerStatus.charAt(0).toUpperCase() + volunteerStatus.slice(1)
+    : "Not Applied"}
+</div>
       </div>
 
     </div>
