@@ -75,6 +75,16 @@ export default function Signup() {
           className="m-[10px] p-3 w-[250px] outline-none border border-black/10 rounded focus:ring-2 focus:ring-[#ff6600]/40"
         />
 
+        
+
+        <input
+          placeholder="Password"
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="m-[10px] p-3 w-[250px] outline-none border border-black/10 rounded focus:ring-2 focus:ring-[#ff6600]/40"
+        />
+
         <div className="flex gap-6 mb-2">
           <label className="flex items-center gap-2 cursor-pointer">
             <input
@@ -100,14 +110,6 @@ export default function Signup() {
             <span className="text-[#444]">NGO</span>
           </label>
         </div>
-
-        <input
-          placeholder="Password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="m-[10px] p-3 w-[250px] outline-none border border-black/10 rounded focus:ring-2 focus:ring-[#ff6600]/40"
-        />
 
         <button
           onClick={handleSignup}
