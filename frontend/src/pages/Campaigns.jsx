@@ -7,7 +7,8 @@ import { apiRequest } from "../services/api";
 function CampaignsPage() {
   const [selected, setSelected] = useState(null);
   const [campaigns, setCampaigns] = useState([]);
-
+  const [applied, setApplied] = useState(false);
+  const [loadingApply, setLoadingApply] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -53,6 +54,22 @@ function CampaignsPage() {
     }
   };
 
+  const handleApply = async (campaignId) => {
+    try {
+      setLoadingApply(true);
+
+      await apiRequest("/volunteers/apply", "POST", {
+        campaignId,
+      });
+
+      setApplied(true);
+    } catch (err) {
+      console.error(err.message);
+    } finally {
+      setLoadingApply(false);
+    }
+  };
+
   if (selected !== null) {
     const campaign = campaigns[selected];
     if (!campaign) return null;
@@ -61,7 +78,10 @@ function CampaignsPage() {
       <div className="flex-1 p-4 md:p-7 flex flex-col">
 
         <button
-          onClick={() => setSelected(null)}
+          onClick={() => {
+  setSelected(null);
+  setApplied(false);
+}}
           className="text-sm text-[#c0453a] mb-4 hover:underline"
         >
           ← Back to Campaigns
@@ -97,6 +117,30 @@ function CampaignsPage() {
           </div>
           <ProgressBar pct={campaign.pct} color={campaign.color} />
         </Card>
+
+        <Card className="mt-4">
+          <div className="text-sm font-medium mb-1">Description</div>
+          <div className="text-sm text-[#666]">
+            {campaign.description || "No description available"}
+          </div>
+        </Card>
+
+        <div className="mt-5">
+          <button
+            onClick={() => handleApply(campaign._id)}
+            disabled={applied || loadingApply}
+            className={`px-4 py-2 rounded text-white text-sm transition ${applied
+                ? "bg-gray-400"
+                : "bg-[#ff6600] hover:bg-[#e65c00]"
+              }`}
+          >
+            {applied
+              ? "Applied"
+              : loadingApply
+                ? "Applying..."
+                : "Volunteer Myself"}
+          </button>
+        </div>
 
       </div>
     );
