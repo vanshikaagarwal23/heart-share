@@ -1,7 +1,6 @@
 const Campaign = require("../models/Campaign");
 const Donation = require("../models/Donation");
 
-// 📥 Get all campaigns with stats
 exports.getCampaigns = async (req, res) => {
   try {
     const campaigns = await Campaign.find();
@@ -33,7 +32,6 @@ exports.getCampaigns = async (req, res) => {
   }
 };
 
-// 📄 Get single campaign
 exports.getCampaignById = async (req, res) => {
   try {
     const campaign = await Campaign.findById(req.params.id);
@@ -58,6 +56,30 @@ exports.getCampaignById = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to fetch campaign",
+      error: error.message,
+    });
+  }
+};
+
+exports.createCampaign = async (req, res) => {
+  try {
+    const { title, description, goalAmount } = req.body;
+
+    const campaign = await Campaign.create({
+      title,
+      description,
+      goalAmount,
+      createdBy: req.user._id,
+    });
+
+    res.status(201).json({
+      success: true,
+      data: campaign,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to create campaign",
       error: error.message,
     });
   }

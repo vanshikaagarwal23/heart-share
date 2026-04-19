@@ -4,14 +4,15 @@ const router = express.Router();
 const {
   getCampaigns,
   getCampaignById,
+  createCampaign,
 } = require("../controllers/campaignController");
 
 const { protect } = require("../middleware/authMiddleware");
 
-// 📥 Get all campaigns
 router.get("/", protect, getCampaigns);
 
-// 📄 Get single campaign
 router.get("/:id", protect, getCampaignById);
+
+router.post("/create", protect, createCampaign);
 
 module.exports = router;

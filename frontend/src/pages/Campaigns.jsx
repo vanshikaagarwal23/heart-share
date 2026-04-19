@@ -36,7 +36,7 @@ function CampaignsPage() {
 
   const handleCreate = async () => {
     try {
-      await apiRequest("/campaigns", "POST", {
+      await apiRequest("/campaigns/create", "POST", {
         title,
         description,
         goalAmount: Number(goalAmount),
