@@ -5,9 +5,9 @@ const cors = require("cors");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const morgan = require("morgan");
-const authRoutes = require("./routes/authRoutes");
-const donationRoutes = require("./routes/donationRoutes");
-
+const authRoutes = require("./src/routes/authRoutes");
+const donationRoutes = require("./src/routes/donationRoutes");
+const ngoRoutes = require("./src/routes/ngoRoutes");
 
 const app = express();
 app.use(morgan("dev"));
@@ -37,7 +37,7 @@ app.use(express.json());
 // 📍 Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/donations", donationRoutes);
-
+app.use("/api/ngo", ngoRoutes);
 
 // ❌ 404 Handler
 app.use((req, res, next) => {
