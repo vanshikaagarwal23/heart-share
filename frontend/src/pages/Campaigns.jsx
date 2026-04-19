@@ -58,40 +58,40 @@ function CampaignsPage() {
     if (!campaign) return null;
 
     return (
-      <div className="flex-1 p-5 md:p-7 flex flex-col overflow-hidden">
+      <div className="flex-1 p-4 md:p-7 flex flex-col">
 
         <button
           onClick={() => setSelected(null)}
-          className="text-[12px] text-[#c0453a] mb-5"
+          className="text-sm text-[#c0453a] mb-4 hover:underline"
         >
           ← Back to Campaigns
         </button>
 
-        <div className="text-[22px]">{campaign.title}</div>
+        <div className="text-xl md:text-2xl font-semibold">{campaign.title}</div>
 
         <div className="mt-2 mb-4">
           <StatusBadge status={campaign.isActive ? "Active" : "Inactive"} />
         </div>
 
-        <div className="grid grid-cols-3 gap-3 my-5">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 my-4">
           <Card>
-            <div>Raised</div>
-            <div>₹{campaign.raised}</div>
+            <div className="text-sm text-[#777]">Raised</div>
+            <div className="text-lg font-semibold">₹{campaign.raised}</div>
           </Card>
 
           <Card>
-            <div>Goal</div>
-            <div>₹{campaign.goalAmount}</div>
+            <div className="text-sm text-[#777]">Goal</div>
+            <div className="text-lg font-semibold">₹{campaign.goalAmount}</div>
           </Card>
 
           <Card>
-            <div>Donations</div>
-            <div>{campaign.donationsCount}</div>
+            <div className="text-sm text-[#777]">Donations</div>
+            <div className="text-lg font-semibold">{campaign.donationsCount}</div>
           </Card>
         </div>
 
         <Card>
-          <div className="flex justify-between mb-2">
+          <div className="flex justify-between mb-2 text-sm">
             <span>Progress</span>
             <span>{campaign.pct}%</span>
           </div>
@@ -103,34 +103,38 @@ function CampaignsPage() {
   }
 
   return (
-    <div className="flex-1 p-5 md:p-7 flex flex-col overflow-hidden">
+    <div className="flex-1 p-4 md:p-7 flex flex-col">
 
-      <div className="mb-6 flex justify-between items-center">
+      <div className="mb-6 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
         <div>
-          <div className="text-[22px]">Campaigns</div>
-          <div className="text-[12px] text-[#888]">
+          <div className="text-xl md:text-2xl font-semibold">Campaigns</div>
+          <div className="text-xs text-[#888]">
             All active fundraising campaigns
           </div>
         </div>
 
         <button
           onClick={() => setShowModal(true)}
-          className="bg-[#ff6600] hover:bg-[#e65c00] text-white px-4 py-2 rounded text-sm"
+          className="bg-[#ff6600] hover:bg-[#e65c00] transition text-white px-4 py-2 rounded text-sm shadow-sm"
         >
           + Create Campaign
         </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 overflow-y-auto">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto">
         {campaigns.map((c, i) => (
-          <Card key={i} onClick={() => setSelected(i)} className="cursor-pointer">
+          <Card
+            key={i}
+            onClick={() => setSelected(i)}
+            className="cursor-pointer hover:shadow-md transition"
+          >
 
             <div className="flex justify-between mb-2">
-              <div>{c.title}</div>
+              <div className="font-medium">{c.title}</div>
               <StatusBadge status={c.isActive ? "Active" : "Inactive"} />
             </div>
 
-            <div className="flex justify-between text-xs mb-2">
+            <div className="flex justify-between text-xs mb-2 text-[#666]">
               <span>₹{c.raised} raised</span>
               <span>Goal: ₹{c.goalAmount}</span>
             </div>
@@ -147,23 +151,23 @@ function CampaignsPage() {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 bg-black/30 flex justify-center items-center z-50">
-          <div className="bg-white p-6 rounded-xl w-[320px] shadow-lg">
+        <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50 px-3">
+          <div className="bg-white p-5 md:p-6 rounded-xl w-full max-w-md shadow-lg">
 
-            <div className="text-lg mb-4">Create Campaign</div>
+            <div className="text-lg font-semibold mb-4">Create Campaign</div>
 
             <input
               placeholder="Title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full mb-3 p-2 border border-black/10 rounded outline-none focus:ring-2 focus:ring-[#ff6600]/40"
+              className="w-full mb-3 p-2.5 border border-black/10 rounded outline-none focus:ring-2 focus:ring-[#ff6600]/40"
             />
 
-            <input
+            <textarea
               placeholder="Description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full mb-3 p-2 border border-black/10 rounded outline-none focus:ring-2 focus:ring-[#ff6600]/40"
+              className="w-full mb-3 p-2.5 border border-black/10 rounded outline-none focus:ring-2 focus:ring-[#ff6600]/40"
             />
 
             <input
@@ -171,20 +175,20 @@ function CampaignsPage() {
               type="number"
               value={goalAmount}
               onChange={(e) => setGoalAmount(e.target.value)}
-              className="w-full mb-4 p-2 border border-black/10 rounded outline-none focus:ring-2 focus:ring-[#ff6600]/40"
+              className="w-full mb-4 p-2.5 border border-black/10 rounded outline-none focus:ring-2 focus:ring-[#ff6600]/40"
             />
 
             <div className="flex justify-end gap-2">
               <button
                 onClick={() => setShowModal(false)}
-                className="px-3 py-1 text-sm"
+                className="px-3 py-1.5 text-sm hover:bg-gray-100 rounded"
               >
                 Cancel
               </button>
 
               <button
                 onClick={handleCreate}
-                className="bg-[#ff6600] hover:bg-[#e65c00] text-white px-3 py-1 rounded text-sm"
+                className="bg-[#ff6600] hover:bg-[#e65c00] transition text-white px-4 py-1.5 rounded text-sm"
               >
                 Create
               </button>
