@@ -170,7 +170,10 @@ const [loadingApply, setLoadingApply] = useState(false);
         {campaigns.map((c, i) => (
           <Card
             key={i}
-            onClick={() => setSelectedCampaign(c)}
+            onClick={() => {
+  console.log("clicked", c);
+  setSelectedCampaign(c);
+}}
             className="cursor-pointer hover:shadow-md transition"
           >
 
