@@ -1,10 +1,8 @@
 const BASE_URL = "https://heart-share-backend.onrender.com/api";
 
-// 🔐 Get token safely
 const getToken = () => {
   const token = localStorage.getItem("token");
 
-  // ❌ Prevent sending invalid token
   if (!token || token === "undefined" || token === "null") {
     return null;
   }
@@ -12,7 +10,6 @@ const getToken = () => {
   return token;
 };
 
-// 📡 Generic API request
 export const apiRequest = async (endpoint, method = "GET", body = null) => {
   try {
     const token = getToken();

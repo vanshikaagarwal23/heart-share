@@ -7,6 +7,7 @@ export default function Signup() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [role, setRole] = useState("donor");
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -27,6 +28,7 @@ export default function Signup() {
           name,
           email,
           password,
+          role,
         }),
       });
 
@@ -36,8 +38,8 @@ export default function Signup() {
         throw new Error(data.message || "Signup failed");
       }
 
-      // ✅ Store token
       localStorage.setItem("token", data.token || data.data?.token);
+      localStorage.setItem("role", role);
 
       navigate("/dashboard");
 
@@ -57,20 +59,44 @@ export default function Signup() {
           <b>Join the kindness movement!</b>
         </p>
 
+        <div className="flex gap-6 mb-2">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="radio"
+              name="role"
+              value="donor"
+              checked={role === "donor"}
+              onChange={(e) => setRole(e.target.value)}
+              className="accent-[#ff6600]"
+            />
+            <span className="text-[#444]">Donor</span>
+          </label>
+
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input
+              type="radio"
+              name="role"
+              value="ngo"
+              checked={role === "ngo"}
+              onChange={(e) => setRole(e.target.value)}
+              className="accent-[#ff6600]"
+            />
+            <span className="text-[#444]">NGO</span>
+          </label>
+        </div>
+
         <input
           placeholder="Full Name"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="m-[10px] p-3 w-[250px] outline-none border border-black/10 rounded"
+          className="m-[10px] p-3 w-[250px] outline-none border border-black/10 rounded focus:ring-2 focus:ring-[#ff6600]/40"
         />
-
-        
 
         <input
           placeholder="Email address"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="m-[10px] p-3 w-[250px] outline-none border border-black/10 rounded"
+          className="m-[10px] p-3 w-[250px] outline-none border border-black/10 rounded focus:ring-2 focus:ring-[#ff6600]/40"
         />
 
         <input
@@ -78,13 +104,13 @@ export default function Signup() {
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="m-[10px] p-3 w-[250px] outline-none border border-black/10 rounded"
+          className="m-[10px] p-3 w-[250px] outline-none border border-black/10 rounded focus:ring-2 focus:ring-[#ff6600]/40"
         />
 
         <button
           onClick={handleSignup}
           disabled={loading}
-          className="bg-[#ff6600] text-white p-3 w-[250px] rounded-[8px]"
+          className="bg-[#ff6600] hover:bg-[#e65c00] transition text-white p-3 w-[250px] rounded-[8px]"
         >
           {loading ? "Creating..." : "Signup"}
         </button>
