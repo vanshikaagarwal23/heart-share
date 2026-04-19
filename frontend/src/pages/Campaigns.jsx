@@ -7,8 +7,9 @@ import { apiRequest } from "../services/api";
 function CampaignsPage() {
   const [selected, setSelected] = useState(null);
   const [campaigns, setCampaigns] = useState([]);
-  const [applied, setApplied] = useState(false);
-  const [loadingApply, setLoadingApply] = useState(false);
+ const [selectedCampaign, setSelectedCampaign] = useState(null);
+const [applied, setApplied] = useState(false);
+const [loadingApply, setLoadingApply] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -54,21 +55,21 @@ function CampaignsPage() {
     }
   };
 
-  const handleApply = async (campaignId) => {
-    try {
-      setLoadingApply(true);
+ const handleApply = async () => {
+  try {
+    setLoadingApply(true);
 
-      await apiRequest("/volunteers/apply", "POST", {
-        campaignId,
-      });
+    await apiRequest("/volunteers/apply", "POST", {
+      campaignId: selectedCampaign._id,
+    });
 
-      setApplied(true);
-    } catch (err) {
-      console.error(err.message);
-    } finally {
-      setLoadingApply(false);
-    }
-  };
+    setApplied(true);
+  } catch (err) {
+    console.error(err.message);
+  } finally {
+    setLoadingApply(false);
+  }
+};
 
   if (selected !== null) {
     const campaign = campaigns[selected];
@@ -169,7 +170,7 @@ function CampaignsPage() {
         {campaigns.map((c, i) => (
           <Card
             key={i}
-            onClick={() => setSelected(i)}
+            onClick={() => setSelectedCampaign(c)}
             className="cursor-pointer hover:shadow-md transition"
           >
 
@@ -241,6 +242,64 @@ function CampaignsPage() {
           </div>
         </div>
       )}
+
+      {selectedCampaign && (
+  <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50 px-3">
+    <div className="bg-white w-full max-w-md p-5 rounded-xl shadow-lg">
+
+      <div className="flex justify-between items-center mb-3">
+        <div className="text-lg font-semibold">{selectedCampaign.title}</div>
+        <button
+          onClick={() => {
+            setSelectedCampaign(null);
+            setApplied(false);
+          }}
+          className="text-sm text-gray-500"
+        >
+          ✕
+        </button>
+      </div>
+
+      <StatusBadge status={selectedCampaign.isActive ? "Active" : "Inactive"} />
+
+      <div className="mt-3 text-sm text-[#666]">
+        {selectedCampaign.description || "No description available"}
+      </div>
+
+      <div className="mt-4 text-sm text-[#444] space-y-1">
+        <div>Goal: ₹{selectedCampaign.goalAmount}</div>
+        <div>Raised: ₹{selectedCampaign.raised}</div>
+        <div>Donations: {selectedCampaign.donationsCount}</div>
+        <div>
+          Created: {new Date(selectedCampaign.createdAt).toLocaleDateString()}
+        </div>
+      </div>
+
+      <div className="mt-4">
+        <button
+          onClick={handleApply}
+          disabled={applied || loadingApply}
+          className={`w-full py-2 rounded text-white text-sm transition ${
+            applied
+              ? "bg-gray-400"
+              : "bg-[#ff6600] hover:bg-[#e65c00]"
+          }`}
+        >
+          {applied
+            ? "Applied"
+            : loadingApply
+            ? "Applying..."
+            : "Volunteer Myself"}
+        </button>
+      </div>
+
+      <div className="mt-3 text-xs text-center text-[#888]">
+        Status: {applied ? "Pending" : "Not Applied"}
+      </div>
+
+    </div>
+  </div>
+)}
 
     </div>
   );
