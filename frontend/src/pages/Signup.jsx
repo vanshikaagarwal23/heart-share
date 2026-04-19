@@ -64,29 +64,7 @@ export default function Signup() {
           className="m-[10px] p-3 w-[250px] outline-none border border-black/10 rounded"
         />
 
-        <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="radio"
-              name="role"
-              value="donor"
-              checked={role === "donor"}
-              onChange={(e) => setRole(e.target.value)}
-              className="accent-[#ff6600]"
-            />
-            <span className="text-[#444]">Donor</span>
-          </label>
-
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="radio"
-              name="role"
-              value="ngo"
-              checked={role === "ngo"}
-              onChange={(e) => setRole(e.target.value)}
-              className="accent-[#ff6600]"
-            />
-            <span className="text-[#444]">NGO</span>
-          </label>
+        
 
         <input
           placeholder="Email address"
