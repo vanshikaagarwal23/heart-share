@@ -51,7 +51,7 @@ export default function Login() {
       
       <div className="flex-1 flex justify-center items-center">
         <img
-          src="https://user8320.na.imgto.link/public/20260417/login.avif"
+          src="/login.avif"
           className="w-[70%]"
         />
       </div>
