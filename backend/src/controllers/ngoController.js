@@ -52,3 +52,51 @@ exports.createNGO = async (req, res) => {
     });
   }
 };
+
+// 📥 Get all NGOs (Admin)
+exports.getAllNGOs = async (req, res) => {
+  try {
+    const ngos = await NGO.find();
+
+    res.status(200).json({
+      success: true,
+      count: ngos.length,
+      data: ngos,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch NGOs",
+      error: error.message,
+    });
+  }
+};
+
+// ✅ Verify NGO (Admin)
+exports.verifyNGO = async (req, res) => {
+  try {
+    const ngo = await NGO.findById(req.params.id);
+
+    if (!ngo) {
+      return res.status(404).json({
+        success: false,
+        message: "NGO not found",
+      });
+    }
+
+    ngo.isVerified = true;
+    await ngo.save();
+
+    res.status(200).json({
+      success: true,
+      message: "NGO verified successfully",
+      data: ngo,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Verification failed",
+      error: error.message,
+    });
+  }
+};

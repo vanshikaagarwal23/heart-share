@@ -1,6 +1,6 @@
 const Donation = require("../models/Donation");
 const NGO = require("../models/NGO");
-
+const Campaign = require("../models/Campaign");
 
 // 📝 Create Donation (Donor only)
 exports.createDonation = async (req, res) => {
@@ -35,6 +35,19 @@ exports.createDonation = async (req, res) => {
       });
     }
 
+    // 🆕 FIND OR CREATE CAMPAIGN
+    let campaign = await Campaign.findOne({ title });
+
+    if (!campaign) {
+      campaign = await Campaign.create({
+        title,
+        description,
+        goalAmount: 50000,
+        createdBy: req.user._id,
+      });
+    }
+
+    // 🆕 ATTACH CAMPAIGN TO DONATION
     const donation = await Donation.create({
       title,
       description,
@@ -43,6 +56,7 @@ exports.createDonation = async (req, res) => {
       amount,
       pickupAddress,
       donor: req.user._id,
+      campaign: campaign._id,
     });
 
     res.status(201).json({
@@ -58,7 +72,6 @@ exports.createDonation = async (req, res) => {
     });
   }
 };
-
 
 // 📥 Get All Donations (Role-based)
 exports.getDonations = async (req, res) => {

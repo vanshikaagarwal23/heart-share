@@ -48,7 +48,6 @@ exports.register = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
 
-    // ✅ Structured validation
     const validationError = validateRegisterInput({ name, email, password });
     if (validationError) {
       return res.status(400).json({
@@ -68,12 +67,26 @@ exports.register = async (req, res) => {
       });
     }
 
+    // ✅ Create user
     const user = await User.create({
       name,
       email,
       password,
       role: userRole,
     });
+
+    // 🔥 NEW: Auto create NGO profile if role = ngo
+    if (userRole === "ngo") {
+      const NGO = require("../models/NGO");
+
+      await NGO.create({
+        user: user._id,
+        name: name,
+        description: "Pending verification",
+        address: "Not provided",
+        contactNumber: "0000000000",
+      });
+    }
 
     const token = generateToken(user);
 

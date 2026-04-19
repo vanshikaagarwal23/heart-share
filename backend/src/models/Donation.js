@@ -31,17 +31,22 @@ const donationSchema = new mongoose.Schema(
       min: [0, "Amount cannot be negative"],
     },
 
-    // 👤 Donor (User)
     donor: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
 
-    // 🏢 NGO (assigned after acceptance)
     ngo: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "NGO",
+      default: null,
+    },
+
+    // 🆕 Campaign Reference (NEW)
+    campaign: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Campaign",
       default: null,
     },
 
@@ -87,17 +92,13 @@ donationSchema.methods.canTransitionTo = function (newStatus) {
 
 // 🧠 Pre-save logic for consistency
 donationSchema.pre("save", function () {
-  // If donation is completed, set completedAt
   if (this.isModified("status") && this.status === "completed") {
     this.completedAt = new Date();
   }
 
-  // If type is money, quantity should not matter
   if (this.type === "money") {
     this.quantity = 0;
   }
-
-  
 });
 
 
