@@ -1,0 +1,60 @@
+.page {
+  flex: 1;
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.page-scroll {
+  flex: 1;
+  padding: 28px;
+  overflow-y: auto;
+}
+
+.page-title {
+  font-family: 'DM Serif Display', serif;
+  font-size: 22px;
+  color: #1a1a1a;
+}
+
+.page-subtitle {
+  font-size: 12px;
+  color: #888;
+  margin-top: 2px;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  overflow-y: auto;
+}
+
+.grid-3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.card-hover {
+  cursor: pointer;
+  border: 0.5px solid rgba(0,0,0,0.06);
+  transition: box-shadow 0.2s ease;
+}
+
+.card-hover:hover {
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+
+.back-btn {
+  font-size: 12px;
+  color: #c0453a;
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-bottom: 20px;
+  padding: 0;
+  font-family: 'DM Sans', sans-serif;
+}
