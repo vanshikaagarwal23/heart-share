@@ -1,50 +1,62 @@
 const jwt = require("jsonwebtoken");
+const User = require("../models/User");
 
-
-// AUTHENTICATION MIDDLEWARE
-const protect = (req, res, next) => {
-
-  const token = req.headers.authorization?.split(" ")[1];
-
-  if (!token) {
-    return res.status(401).json({ message: "Access denied. No token provided." });
-  }
-
+// Middleware to verify JWT token
+exports.protect = async (req, res, next) => {
   try {
+    let token;
 
-    const decoded = jwt.verify(token, "secretkey");
-
-    req.user = decoded;
-
-    next();
-
-  } catch (error) {
-
-    res.status(401).json({ message: "Invalid token" });
-
-  }
-
-};
-
-
-
-// ROLE-BASED AUTHORIZATION
-const authorizeRoles = (...roles) => {
-
-  return (req, res, next) => {
-
-    if (!req.user || !roles.includes(req.user.role)) {
-      return res.status(403).json({ message: "Access forbidden" });
+    // Check Authorization header
+    if (
+      req.headers.authorization &&
+      req.headers.authorization.startsWith("Bearer")
+    ) {
+      token = req.headers.authorization.split(" ")[1];
     }
 
-    next();
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "Not authorized, token missing",
+      });
+    }
 
-  };
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
+    // Fetch user from DB
+    const user = await User.findById(decoded.id).select("-password");
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "User not found",
+      });
+    }
+
+    // Attach user to request
+    req.user = user;
+
+    return next(); // ✅ explicitly returning next
+  } catch (error) {
+    return next(error); // ✅ pass error to global error handler
+  }
 };
 
+// Middleware for role-based authorization
+exports.authorizeRoles = (...roles) => {
+  return (req, res, next) => {
+    try {
+      if (!req.user || !roles.includes(req.user.role)) {
+        return res.status(403).json({
+          success: false,
+          message: `Access denied. Required role: ${roles.join(", ")}`,
+        });
+      }
 
-module.exports = {
-  protect,
-  authorizeRoles
+      return next(); // ✅ consistency
+    } catch (error) {
+      return next(error); // ✅ forward error
+    }
+  };
 };

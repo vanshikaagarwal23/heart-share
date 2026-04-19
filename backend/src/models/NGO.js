@@ -1,60 +1,52 @@
-// app.js ngo 
-const express = require("express");
-const bodyParser = require("body-parser");
-const mysql = require("mysql2/promise");
+const mongoose = require("mongoose");
 
-const app = express();
-app.use(bodyParser.json());
+const ngoSchema = new mongoose.Schema(
+  {
+    // 🔗 Link to User (account)
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      unique: true,
+    },
 
-// Database connection
-const dbConfig = {
-  host: "localhost",
-  user: "root",
-  password: "yourpassword",
-  database: "ngo_donations"
-};
+    name: {
+      type: String,
+      required: [true, "NGO name is required"],
+      trim: true,
+    },
 
-// Utility: connect to DB
-async function getConnection() {
-  return await mysql.createConnection(dbConfig);
-}
-// 1. Create Donation
-app.post("/donations", async (req, res) => {
-  const { donor, amount, currency, payment_method, message } = req.body;
-  try {
-    const conn = await getConnection();
+    description: {
+      type: String,
+      required: [true, "Description is required"],
+    },
 
-    // Insert donor if not exists
-    const [existing] = await conn.execute(
-      "SELECT donor_id FROM donors WHERE email = ?",
-      [donor.email]
-    );
-    let donorId;
-    if (existing.length > 0) {
-      donorId = existing[0].donor_id;
-    } else {
-      const [result] = await conn.execute(
-        "INSERT INTO donors (name, email, phone) VALUES (?, ?, ?)",
-        [donor.name, donor.email, donor.phone]
-      );
-      donorId = result.insertId;
-    }
+    address: {
+      type: String,
+      required: [true, "Address is required"],
+    },
 
-    // Insert donation
-    const [donation] = await conn.execute(
-      "INSERT INTO donations (donor_id, amount, currency, payment_method, status, message) VALUES (?, ?, ?, ?, 'pending', ?)",
-      [donorId, amount, currency, payment_method, message]
-    );
+    contactNumber: {
+      type: String,
+      required: [true, "Contact number is required"],
+    },
 
-    res.json({
-      donation_id: donation.insertId,
-      status: "pending",
-      payment_url: `https://payments.ngoexample.org/pay/${donation.insertId}`
-    });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+    isVerified: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  {
+    timestamps: true,
   }
+);
+
+
+// 🔍 Populate user info automatically when needed
+ngoSchema.pre(/^find/, function () {
+  this.populate("user", "name email role");
+  
 });
 
 
-    
+module.exports = mongoose.model("NGO", ngoSchema);
