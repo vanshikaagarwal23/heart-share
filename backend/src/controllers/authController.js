@@ -67,26 +67,13 @@ exports.register = async (req, res) => {
       });
     }
 
-    // ✅ Create user
+    // ✅ Create user ONLY
     const user = await User.create({
       name,
       email,
       password,
       role: userRole,
     });
-
-    // 🔥 NEW: Auto create NGO profile if role = ngo
-    if (userRole === "ngo") {
-      const NGO = require("../models/NGO");
-
-      await NGO.create({
-        user: user._id,
-        name: name,
-        description: "Pending verification",
-        address: "Not provided",
-        contactNumber: "0000000000",
-      });
-    }
 
     const token = generateToken(user);
 
@@ -99,10 +86,11 @@ exports.register = async (req, res) => {
       },
     });
   } catch (error) {
+    console.error("REGISTER ERROR:", error); // 👈 IMPORTANT
+
     res.status(500).json({
       success: false,
-      message: "Registration failed",
-      error: error.message,
+      message: error.message || "Registration failed",
     });
   }
 };
