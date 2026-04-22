@@ -95,6 +95,7 @@ exports.register = async (req, res) => {
     message: error.message,
   });
 };
+}
 
 
 // 🔑 Login User
