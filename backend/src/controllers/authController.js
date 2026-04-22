@@ -86,13 +86,14 @@ exports.register = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("REGISTER ERROR:", error); // 👈 IMPORTANT
+    console.error("🔥 REGISTER ERROR FULL:", error);
+  console.error("🔥 MESSAGE:", error.message);
+  console.error("🔥 STACK:", error.stack);
 
-    res.status(500).json({
-      success: false,
-      message: error.message || "Registration failed",
-    });
-  }
+  res.status(500).json({
+    success: false,
+    message: error.message,
+  });
 };
 
 
