@@ -7,7 +7,7 @@ import { AuthProvider, useAuth } from "./context/AuthContext";
 import { ToastProvider } from "./context/ToastContext";
 import ProtectedRoute from "./components/routing/ProtectedRoute";
 
-import LandingPage  from "./pages/LandingPage";
+import LandingPage  from "./pages/LandingPage b";
 import Login        from "./pages/Login";
 import Signup       from "./pages/Signup";
 import Admin        from "./pages/Admin";
