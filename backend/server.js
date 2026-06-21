@@ -20,7 +20,7 @@ app.use(helmet());
 
 const allowedOrigins = [
   process.env.CLIENT_URL || "http://localhost:5173",
-  "https://heart-share.vercel.app/",
+  "https://heart-share.vercel.app",
   "http://localhost:5174",
 ];
 
